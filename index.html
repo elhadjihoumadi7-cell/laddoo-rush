@@ -74,27 +74,24 @@ input::placeholder{color:#ffffff80}
 <div class="ui" id="home">
   <div class="sheet" id="menu">
     <button id="bLocal">Jouer à deux sur ce téléphone</button>
-    <button class="alt" id="bHost">Créer une partie en ligne</button>
-    <button class="alt" id="bJoinOpen">Rejoindre avec un code</button>
+    <button class="alt" id="bAi">Jouer seul contre l'ordi</button>
+    <button class="alt" id="bHost">Jouer en ligne</button>
     <button class="ghost" id="bRules1">Les règles</button>
   </div>
   <div class="sheet hidden" id="hostBox">
-    <h2>Partie en ligne</h2>
-    <input id="nameH" placeholder="Ton prénom" maxlength="14" autocomplete="off">
-    <div id="hostCode" class="hidden">
-      <p class="small">Donne ce code à ton ami</p>
+    <h2>Jouer en ligne</h2>
+    <input id="nameH" placeholder="Ton prénom (facultatif)" maxlength="14" autocomplete="off">
+    <div id="hostCode">
+      <p class="small">Ton code : envoie-le à ton ami</p>
       <div class="code" id="codeTxt">----</div>
-      <div class="row"><button class="alt" id="bShare">Partager l'invitation</button></div>
+      <div class="row"><button class="alt" id="bCopy">Copier</button><button class="alt" id="bShare">Partager</button></div>
       <p class="small" id="hostStat"><span class="spin"></span>Connexion…</p>
     </div>
-    <div class="row"><button class="ghost" id="bBack1">Retour</button><button id="bHostGo">Créer le code</button></div>
-  </div>
-  <div class="sheet hidden" id="joinBox">
-    <h2>Rejoindre une partie</h2>
-    <input id="nameJ" placeholder="Ton prénom" maxlength="14" autocomplete="off">
-    <input id="codeIn" placeholder="Code (ex. K7QM)" maxlength="4" autocomplete="off" style="text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:24px">
-    <p class="small" id="joinStat"></p>
-    <div class="row"><button class="ghost" id="bBack2">Retour</button><button id="bJoinGo">Rejoindre</button></div>
+    <p class="small" style="margin-top:4px">Tu as reçu un code ?</p>
+    <div class="row"><input id="codeIn" placeholder="CODE" maxlength="4" autocomplete="off" style="text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:22px;flex:1.4"><button id="bJoinGo">Rejoindre</button></div>
+    <p class="small hidden" id="joinStat"></p>
+    <button class="ghost" id="bBack1">Retour</button>
+    <button class="hidden" id="bHostGo"></button>
   </div>
 </div>
 
@@ -279,7 +276,8 @@ function sfx(k){if(!sound)return;try{AC=AC||new (window.AudioContext||window.web
 let st={pos:[0,0],turn:0,wins:[0,0],winner:null,seq:0};
 let mode=null,me=null,names=['Jaune','Orange'],busy=false,q=Promise.resolve();
 const enqueue=fn=>q=q.then(fn).catch(e=>console.error(e));
-const nm=i=>names[i]+(mode!=='local'&&me===i?' (toi)':'');
+const nm=i=>names[i]+(mode!=='local'&&mode!=='ai'&&me===i?' (toi)':'');
+const sj=i=>mode!=='local'&&i===me?'<em>Tu</em> fais':`<em>${esc(names[i])}</em> fait`;
 function say(h){$('msg').innerHTML=h}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';')}
 function hud(s){[0,1].forEach(i=>{$('n'+i).textContent=nm(i);$('p'+i).classList.toggle('on',s.turn===i&&s.winner==null);
@@ -292,13 +290,13 @@ function turnMsg(s){return s.winner!=null?'':mode!=='local'&&s.turn===me?'<em>À
 async function animate(act){busy=true;pending=false;refreshBtn();
   if(!shaking)await startShake();const el=performance.now()-shakeT0;if(el<850)await wait(850-el);
   setDie(act.v);await cupLift();await wait(150);
-  say(`<em>${esc(names[act.p])}</em> fait <em>${act.v}</em> !`);
+  say(`${sj(act.p)} <em>${act.v}</em> !`);
   for(const op of act.ops){if(op.swap){await wait(250);await swapAnim()}else{if(op.to!==vis.pos[op.w]&&act.ops.indexOf(op)>0)await wait(300);await walk(op.w,op.to)}}
   vis.pos=act.st.pos.slice();placePawns();
-  const parts=[`<em>${esc(names[act.p])}</em> fait <em>${act.v}</em>.`];if(act.txt)parts.push(act.txt);
+  const parts=[`${sj(act.p)} <em>${act.v}</em>.`];if(act.txt)parts.push(act.txt);
   hud(act.st);
   if(act.st.winner!=null){parts.push('');say(parts.join(' '));busy=false;refreshBtn();return winFx(act.st.winner)}
-  say(parts.join(' ')+'<br>'+(act.six?`<em>6 !</em> ${esc(names[act.p])} rejoue.`:turnMsg(act.st)));busy=false;pending=false;refreshBtn()}
+  say(parts.join(' ')+'<br>'+(act.six?(mode!=='local'&&act.p===me?'<em>6 !</em> Tu rejoues.':`<em>6 !</em> ${esc(names[act.p])} rejoue.`):turnMsg(act.st)));busy=false;pending=false;refreshBtn();aiTick()}
 function snap(s){st=s;vis.pos=s.pos.slice();placePawns();hud(s);if(s.winner==null){$('win').classList.add('hidden');say(turnMsg(s))}}
 function winFx(w){sfx('win');$('wt').textContent=(mode!=='local'&&w===me?'Tu':names[w])+(mode!=='local'&&w===me?' as gagné !':' gagne !');
   $('wsub').textContent=mode!=='local'&&w!==me?'Les laddoos sont pour ton adversaire… revanche ?':'Le bol de laddoos est à toi !';
@@ -336,42 +334,46 @@ function onGuestMsg(m){if(m.to&&m.to!==myId)return;
   else if(m.st.seq>st.seq&&!busy){clearTimeout(rollRetry);pending=false;shaking=false;snap(m.st)}
   else if(m.st.seq===st.seq)hud(st)}
 /* ---------- écrans ---------- */
-function show(id){['menu','hostBox','joinBox'].forEach(k=>$(k).classList.toggle('hidden',k!==id))}
+function show(id){['menu','hostBox'].forEach(k=>$(k).classList.toggle('hidden',k!==id))}
 function startGame(){homeMode=false;$('home').classList.add('hidden');$('logo').classList.add('hidden');$('game').classList.remove('hidden');$('win').classList.add('hidden');
-  fit();cupDown();vis.pos=st.pos.slice();placePawns();hud(st);say(turnMsg(st));if(mode!=='local'){lastPeer=Date.now();online=true;startHB()}}
+  fit();cupDown();vis.pos=st.pos.slice();placePawns();hud(st);say(turnMsg(st));if(mode==='host'||mode==='guest'){lastPeer=Date.now();online=true;startHB()}aiTick()}
 function goHome(){if(net){net.close();net=null}clearInterval(hbT);mode=null;me=null;guestId=null;gotState=false;pending=false;busy=false;
   names=['Jaune','Orange'];st={pos:[0,0],turn:0,wins:[0,0],winner:null,seq:0};vis.pos=[0,0];placePawns();
   homeMode=true;$('game').classList.add('hidden');$('win').classList.add('hidden');$('lost').classList.add('hidden');$('home').classList.remove('hidden');$('logo').classList.remove('hidden');show('menu');fit()}
-function rematch(){st=fresh(true,st.winner==null?0:1-st.winner);if(net)net.send({t:'state',st,names});cupDown();snap(st)}
-const savedName=(()=>{try{return localStorage.getItem('lr_name')||''}catch(e){return''}})();$('nameH').value=$('nameJ').value=savedName;
+function rematch(){st=fresh(true,st.winner==null?0:1-st.winner);if(net)net.send({t:'state',st,names});cupDown();snap(st);aiTick()}
+function aiTick(){if(mode==='ai'&&st.turn===1&&st.winner==null&&!busy)setTimeout(()=>{if(mode==='ai'&&st.turn===1&&st.winner==null&&!busy)doRoll()},1100)}
+const savedName=(()=>{try{return localStorage.getItem('lr_name')||''}catch(e){return''}})();$('nameH').value=savedName;
 const keepName=v=>{try{localStorage.setItem('lr_name',v)}catch(e){}};
 $('bLocal').onclick=()=>{sfx('hop');mode='local';me=null;names=['Jaune','Orange'];st={pos:[0,0],turn:0,wins:[0,0],winner:null,seq:0};startGame()};
-$('bHost').onclick=()=>{show('hostBox');$('hostCode').classList.add('hidden');$('bHostGo').classList.remove('hidden')};
-$('bJoinOpen').onclick=()=>{show('joinBox');$('joinStat').textContent=''};
-$('bBack1').onclick=$('bBack2').onclick=()=>{if(net){net.close();net=null}show('menu')};
-$('bHostGo').onclick=async()=>{const n=$('nameH').value.trim()||'Joueur 1';keepName(n);names=[n,'…'];mode='host';me=0;guestId=null;
+$('bHost').onclick=()=>{show('hostBox');$('bHostGo').onclick()};
+$('nameH').addEventListener('input',()=>{if(mode==='host'){names[0]=$('nameH').value.trim()||'Joueur 1';keepName(names[0])}});
+$('bBack1').onclick=()=>{if(net){net.close();net=null}show('menu')};
+$('bHostGo').onclick=async()=>{if(net){net.close();net=null}const n=$('nameH').value.trim()||'Joueur 1';keepName(n);names=[n,'…'];mode='host';me=0;guestId=null;
   const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';const code=Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join('');
-  $('codeTxt').textContent=code;$('hostCode').classList.remove('hidden');$('bHostGo').classList.add('hidden');$('hostStat').innerHTML='<span class="spin"></span>Connexion…';
+  $('codeTxt').textContent=code;$('bCopy').textContent='Copier';
+  $('bCopy').onclick=async()=>{try{await navigator.clipboard.writeText(code);$('bCopy').textContent='Code copié !'}catch(e){$('bCopy').textContent=code}};$('hostCode').classList.remove('hidden');$('bHostGo').classList.add('hidden');$('hostStat').innerHTML='<span class="spin"></span>Connexion…';
   try{net=await connect(code,onHostMsg,()=>{$('hostStat').innerHTML='<span class="spin"></span>En attente de ton ami…'})}catch(e){$('hostStat').textContent='Connexion impossible. Vérifie internet et réessaie.'}
   $('bShare').onclick=async()=>{const url=location.href.split('#')[0]+'#'+code,txt=`On joue à Laddoo Rush ? Code : ${code}`;
     try{if(navigator.share){await navigator.share({title:'Laddoo Rush',text:txt,url});return}}catch(e){return}
     try{await navigator.clipboard.writeText(txt+'\n'+url);$('bShare').textContent='Lien copié !'}catch(e){$('bShare').textContent='Code : '+code}}};
 $('bJoinGo').onclick=async()=>{const code=$('codeIn').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==4){$('joinStat').textContent='Le code fait 4 caractères.';return}
-  const n=$('nameJ').value.trim()||'Joueur 2';keepName(n);names=['…',n];mode='guest';me=1;gotState=false;$('joinStat').innerHTML='<span class="spin"></span>Connexion…';
+  $('joinStat').classList.remove('hidden');const n=$('nameH').value.trim()||'Joueur 2';keepName(n);names=['…',n];mode='guest';me=1;gotState=false;$('joinStat').innerHTML='<span class="spin"></span>Connexion…';
   try{if(net)net.close();net=await connect(code,onGuestMsg,()=>{$('joinStat').innerHTML='<span class="spin"></span>Recherche de la partie…';
     const tryJoin=()=>{if(!net||gotState)return;net.send({t:'join',name:n});setTimeout(tryJoin,2000)};tryJoin();
     setTimeout(()=>{if(!gotState&&mode==='guest')$('joinStat').textContent='Aucune partie trouvée avec ce code. Vérifie-le ou demande à ton ami de le recréer.'},15000)})}catch(e){$('joinStat').textContent='Connexion impossible. Vérifie internet et réessaie.'}};
 $('codeIn').addEventListener('input',e=>e.target.value=e.target.value.toUpperCase());
-$('roll').onclick=()=>{if($('roll').disabled)return;
+function doRoll(){
   if(mode==='guest'){pending=true;refreshBtn();startShake();const s=st.seq;const send=()=>{if(net&&st.seq===s&&pending){net.send({t:'roll',seq:s});rollRetry=setTimeout(send,3000)}};send();return}
-  const act=play(st,1+Math.floor(Math.random()*6));st=act.st;if(mode==='host'&&net)net.send({t:'state',st,names,act});startShake();enqueue(()=>animate(act))};
+  const act=play(st,1+Math.floor(Math.random()*6));st=act.st;if(mode==='host'&&net)net.send({t:'state',st,names,act});startShake();enqueue(()=>animate(act))}
+$('roll').onclick=()=>{if(!$('roll').disabled)doRoll()};
+$('bAi').onclick=()=>{sfx('hop');mode='ai';me=0;names=[$('nameH').value.trim()||'Toi','Ordi'];st={pos:[0,0],turn:0,wins:[0,0],winner:null,seq:0};startGame()};
 $('bAgain').onclick=()=>{$('win').classList.add('hidden');if(mode==='guest'){net&&net.send({t:'again'});say('Revanche demandée…')}else rematch()};
 $('bHome').onclick=$('bQuit').onclick=goHome;
 $('bSound').onclick=()=>{sound=!sound;$('bSound').textContent='Son : '+(sound?'oui':'non')};
 $('bRules1').onclick=$('bRules2').onclick=()=>$('rules').classList.remove('hidden');
 $('bRulesOk').onclick=()=>$('rules').classList.add('hidden');
 // lien d'invitation : ouvre directement « Rejoindre »
-const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{4}$/.test(h)){$('codeIn').value=h;show('joinBox')}
+const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{4}$/.test(h)){$('codeIn').value=h;show('hostBox');$('hostCode').classList.add('hidden');$('joinStat').classList.remove('hidden');$('joinStat').textContent='Code reçu : appuie sur Rejoindre.'}
 placePawns();fit();requestAnimationFrame(loop);
 window.__lr={get st(){return st},get vis(){return vis}};
 }
