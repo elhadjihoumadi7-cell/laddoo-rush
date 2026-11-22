@@ -65,6 +65,9 @@ input::placeholder{color:#ffffff80}
 .goal{font-weight:600;font-size:15px;opacity:.9;text-align:center}
 .timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--y);min-width:52px;text-align:right}
 .ladder{display:grid;gap:8px;justify-items:center;padding:8px 0 10px;max-height:44vh;overflow:auto}
+.word.played,.word.mini{padding:4px;border-radius:16px;box-shadow:inset 0 0 0 3px var(--pc)}.word.mini{padding:3px;border-radius:12px;margin:0 auto 4px;width:max-content}
+.wait{display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:16px;border:2px dashed var(--pc);font-weight:600}
+.turn{text-align:center;font-size:18px;min-height:26px;margin-top:2px}
 .dots{height:14px;width:4px;border-left:4px dotted #ffffff40}
 #msg{text-align:center;min-height:24px;font-weight:600;color:var(--y);margin:4px 0}
 .kb{display:grid;gap:6px;margin-top:6px}
@@ -93,7 +96,7 @@ input::placeholder{color:#ffffff80}
 
 <!-- ACCUEIL -->
 <section id="home">
-  <div class="hero"><h1>Mot <span>à</span> Mot</h1><p>Change une lettre à la fois, atteins le mot cible</p></div>
+  <div class="hero"><h1>Mot <span>à</span> Mot</h1><p>Ensemble, chacun son tour, change une lettre jusqu'au mot cible</p></div>
   <div class="demo" aria-hidden="true">
     <div class="word"><div class="t small">J</div><div class="t small">E</div><div class="t small">U</div><div class="t small">X</div></div>
     <div class="dots"></div>
@@ -104,7 +107,7 @@ input::placeholder{color:#ffffff80}
   <div class="sheet" id="menu">
     <div class="chips"><button class="chip on" data-n="4">4 lettres</button><button class="chip" data-n="5">5 lettres</button></div>
     <button id="bLocal">Jouer à deux sur ce téléphone</button>
-    <button class="alt" id="bAi">Jouer seul contre l'ordi</button>
+    <button class="alt" id="bAi">Jouer seul avec l'ordi</button>
     <button class="alt" id="bHost">Jouer en ligne</button>
     <div class="row"><button class="ghost" id="bHub">Tous les jeux</button><button class="ghost" id="bRules1">Les règles</button></div>
   </div>
@@ -130,42 +133,36 @@ input::placeholder{color:#ffffff80}
     <div class="pl" id="p0" style="--c:var(--y)"><b><i></i><span id="n0"></span></b><small id="s0"></small><div class="bar"><div id="g0"></div></div></div>
     <div class="pl" id="p1" style="--c:var(--o)"><b><i></i><span id="n1"></span></b><small id="s1"></small><div class="bar"><div id="g1"></div></div></div>
   </div>
-  <div class="tools"><button class="ghost" id="bQuit">Quitter</button><div class="goal" id="goal"></div><div class="timer" id="timer">0:00</div></div>
+  <div class="tools"><button class="ghost" id="bQuit">Quitter</button><div class="goal" id="goal"></div><div class="timer" id="timer"></div></div>
+  <div class="turn" id="turnTxt"></div>
   <div class="ladder" id="ladder"></div>
   <div id="msg"></div>
   <div class="kb" id="kb"></div>
-  <div class="acts"><button class="ghost" id="bUndo">Retour</button><button class="ghost" id="bHint">Indice</button><button id="bOk">Valider</button></div>
-  <div class="row" style="margin-top:8px"><button class="ghost" id="bGive">J'abandonne</button><button class="ghost" id="bRules2">Règles</button></div>
+  <div class="acts"><button class="ghost" id="bPass">Passer</button><button class="ghost" id="bHint">Indice</button><button id="bOk">Valider</button></div>
+  <div class="row" style="margin-top:8px"><button class="ghost" id="bRules2">Règles</button></div>
 </section>
 </div>
 
 <div class="banner hidden" id="lost"></div>
-
-<div class="modal hidden" id="pass"><div class="sheet">
-  <p class="big" id="passT"></p>
-  <p class="small" id="passS"></p>
-  <button id="bReady">Je suis prêt</button>
-</div></div>
 
 <div class="modal hidden" id="result"><div class="sheet">
   <p class="big" id="rT"></p>
   <p class="small" id="rS"></p>
   <div class="res" id="rBody"></div>
   <p class="small" id="rBest"></p>
-  <button id="bNext">Manche suivante</button>
+  <button id="bNext">Nouveau mot</button>
   <button class="ghost" id="bMenu">Menu</button>
 </div></div>
 
 <div class="modal hidden" id="rules"><div class="sheet">
   <h2>Les règles</h2>
   <ul>
-    <li>On part du premier mot et on doit arriver au <b>mot cible</b> (en doré).</li>
-    <li>À chaque étape, on change <b>une seule lettre</b>. Touche une case, puis une lettre du clavier.</li>
-    <li>Chaque étape doit être un <b>vrai mot français</b> (sans accents), jamais déjà utilisé.</li>
-    <li>Les lettres en vert sont déjà bien placées par rapport au mot cible.</li>
-    <li><b>Contre l'ordi et en ligne</b> : c'est une course, le premier arrivé gagne.</li>
-    <li><b>À deux sur un téléphone</b> : chacun joue le même mot à son tour ; le moins d'étapes gagne, puis le plus rapide.</li>
-    <li>L'<b>indice</b> donne le prochain mot du chemin le plus court, mais compte une étape en plus.</li>
+    <li>On part du premier mot et on doit arriver <b>ensemble</b> au <b>mot cible</b> (en doré).</li>
+    <li>On joue <b>chacun son tour</b> sur la même échelle : à ton tour, tu changes <b>une seule lettre</b> du dernier mot.</li>
+    <li>Chaque mot doit être un <b>vrai mot français</b> (sans accents) et jamais déjà utilisé.</li>
+    <li>Quand le mot cible est trouvé, <b>vous gagnez tous les deux</b>. Moins vous faites d'étapes, plus vous avez d'étoiles.</li>
+    <li>Les lettres en vert sont déjà bien placées. La bordure de chaque mot montre qui l'a joué.</li>
+    <li>45 secondes par tour. Bloqué ? Tu peux <b>passer</b>. 2 <b>indices</b> par joueur et par mot.</li>
   </ul>
   <button id="bRulesOk">Compris</button>
 </div></div>
@@ -195,132 +192,120 @@ function sfx(k){try{unlockAudio();if(!AC)return;const t=AC.currentTime+.01;
   else if(k==='win')[523,659,784,1047,784,1047,1319].forEach((f,j)=>tone(f,f,t+j*.12,.2,'triangle',.22));else if(k==='lose')[392,370,349,330].forEach((f,j)=>tone(f,f*.97,t+j*.2,.22));
   else if(k==='opp')tone(500,600,t,.08,'sine',.08)}catch(e){}}
 /* ---------- état ---------- */
-let N=4,mode=null,me=0,names=['Joueur 1','Joueur 2'],wins=[0,0],round=0,pz=null,turnP=0;
-let chain=[],cur=[],sel=0,hints=0,t0=0,tick=null,playing=false,res=[null,null],oppSteps=0,aiT=null,aiStep=0,aiPath=null,winner=null;
+let N=4,mode=null,me=0,names=['Joueur 1','Joueur 2'],wins=[0,0],g=null,sel=0,cur=[],tick=null,turnT0=0,aiT=null,dist=null,myHint=0,pending=null,shown=-1;
+const TURN_MS=45000;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
-const fmt=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function show(sec){$('home').classList.toggle('hidden',sec!=='home');$('game').classList.toggle('hidden',sec!=='game')}
 function box(id){['menu','hostBox','joinBox'].forEach(k=>$(k).classList.toggle('hidden',k!==id))}
 document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{N=+c.dataset.n;document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c))});
+const last=()=>g.chain[g.chain.length-1];
+const myTurn=()=>g&&g.winner==null&&(mode==='local'||g.turn===me);
+const firstDiff=w=>{for(let i=0;i<w.length;i++)if(w[i]!==g.pz.b[i])return i;return 0};
+function distFrom(n,b){const {nb}=dict(n),d=new Map([[b,0]]),q=[b];while(q.length){const u=q.shift();for(const v of nb.get(u)||[])if(!d.has(v)){d.set(v,d.get(u)+1);q.push(v)}}return d}
 /* ---------- rendu ---------- */
-function tiles(w,cls=''){return w.split('').map((c,i)=>`<div class="t ${cls} ${pz&&c===pz.b[i]?'ok':''}">${c}</div>`).join('')}
-function render(){const L=$('ladder');let h='';
-  chain.forEach((w,i)=>{h+=`<div class="word">${tiles(w)}</div><div class="dots"></div>`});
-  if(!done()){h+=`<div class="word cur" id="curW">${cur.map((c,i)=>`<div class="t ${c!==last()[i]?'ch':''} ${i===sel?'sel':''} ${c===pz.b[i]?'ok':''}" data-i="${i}">${c}</div>`).join('')}</div><div class="dots"></div>`}
-  h+=`<div class="word target">${pz.b.split('').map(c=>`<div class="t">${c}</div>`).join('')}</div>`;
+const PC=['#ffc531','#ff6a2b'];
+function render(){if(!g)return;const L=$('ladder'),b=g.pz.b;let h='';
+  g.chain.forEach((w,i)=>{const by=g.by[i];h+=`<div class="word played" style="--pc:${by<0?'#ffffff30':PC[by]}">${[...w].map((c,k)=>`<div class="t ${c===b[k]?'ok':''}">${c}</div>`).join('')}</div><div class="dots"></div>`});
+  if(g.winner==null){if(myTurn())h+=`<div class="word cur" id="curW">${cur.map((c,i)=>`<div class="t ${c!==last()[i]?'ch':''} ${i===sel?'sel':''} ${c===b[i]?'ok':''}" data-i="${i}">${c}</div>`).join('')}</div><div class="dots"></div>`;
+    else h+=`<div class="wait" style="--pc:${PC[g.turn]}"><span class="spin"></span>${esc(names[g.turn])} réfléchit…</div><div class="dots"></div>`}
+  h+=`<div class="word target">${[...b].map(c=>`<div class="t">${c}</div>`).join('')}</div>`;
   L.innerHTML=h;L.scrollTop=L.scrollHeight;
   L.querySelectorAll('#curW .t').forEach(t=>t.onclick=()=>{sel=+t.dataset.i;sfx('key');render()});
+  const lw=L.querySelectorAll('.played');if(lw.length>1&&g.chain.length!==render.n){lw[lw.length-1].classList.add('pop')}render.n=g.chain.length;
   hud()}
-const last=()=>chain[chain.length-1];
-const done=()=>last()===pz.b;
-const steps=()=>chain.length-1+hints;
-function hud(){[0,1].forEach(i=>{$('n'+i).textContent=names[i]+((mode==='host'||mode==='guest')&&i===me?' (toi)':'');$('s'+i).textContent=`${wins[i]} victoire${wins[i]>1?'s':''}`});
-  const mine=mode==='local'?turnP:me,opp=1-mine,best=pz.best;
-  $('p0').classList.toggle('on',mine===0);$('p1').classList.toggle('on',mine===1);
-  $('s'+mine).textContent+=` · ${steps()} étape${steps()>1?'s':''}`;$('g'+mine).style.width=Math.min(100,(chain.length-1)/(best+2)*100)+'%';
-  if(mode==='ai'){$('s1').textContent+=` · ${aiStep}/${best}`;$('g1').style.width=(aiStep/best*100)+'%'}
-  else if(mode==='host'||mode==='guest'){$('s'+opp).textContent+=` · ${oppSteps} étape${oppSteps>1?'s':''}`;$('g'+opp).style.width=Math.min(100,oppSteps/(best+2)*100)+'%'}
-  else{$('g'+opp).style.width=res[opp]?'100%':'0%'}
-  $('goal').innerHTML=`${pz.a} → ${pz.b}<br><span style="font-size:12px;opacity:.7">faisable en ${best} étapes</span>`}
+function hud(){[0,1].forEach(i=>{$('n'+i).textContent=names[i]+((mode==='host'||mode==='guest')&&i===me?' (toi)':'');
+  $('s'+i).textContent=`${g.by.filter(x=>x===i).length} mot${g.by.filter(x=>x===i).length>1?'s':''} posé${g.by.filter(x=>x===i).length>1?'s':''}`;
+  $('p'+i).classList.toggle('on',g.winner==null&&g.turn===i)});
+  const d=dist&&dist.get(last()),d0=dist&&dist.get(g.pz.a)||1;[0,1].forEach(i=>$('g'+i).style.width=(g.winner===2?100:Math.max(0,(1-(d??d0)/d0)*100))+'%');$('goal').innerHTML=`${g.pz.a} → ${g.pz.b}<br><span style="font-size:12px;opacity:.7">${d!=null?`encore ${d} étape${d>1?'s':''} au mieux`:''}</span>`;
+  $('bOk').disabled=$('bPass').disabled=$('bHint').disabled=!myTurn()||!!pending;
+  $('turnTxt').innerHTML=g.winner!=null?'':myTurn()?(mode==='local'?`À <b style="color:${PC[g.turn]}">${esc(names[g.turn])}</b> de jouer`:'<b style="color:var(--y)">À toi</b> de jouer'):`Au tour de <b style="color:${PC[g.turn]}">${esc(names[g.turn])}</b>`}
 function say(t){$('msg').textContent=t}
 /* ---------- clavier ---------- */
 const ROWS=['AZERTYUIOP','QSDFGHJKLM','WXCVBN'];
 $('kb').innerHTML=ROWS.map((r,j)=>`<div>${r.split('').map(c=>`<button class="k" data-k="${c}">${c}</button>`).join('')}${j===2?'<button class="k wide" data-k="DEL">Effacer</button>':''}</div>`).join('');
 $('kb').onclick=e=>{const k=e.target.closest('[data-k]');if(k)press(k.dataset.k)};
-addEventListener('keydown',e=>{if(!playing)return;const k=e.key.toUpperCase();
+addEventListener('keydown',e=>{if(!myTurn()||pending)return;const k=e.key.toUpperCase();
   if(/^[A-Z]$/.test(k))press(k);else if(e.key==='Enter')validate();else if(e.key==='Backspace')press('DEL');else if(e.key==='ArrowLeft'){sel=(sel+N-1)%N;render()}else if(e.key==='ArrowRight'){sel=(sel+1)%N;render()}});
-function press(k){if(!playing)return;sfx('key');const L=last().split('');
-  if(k==='DEL'){cur=L.slice();render();return}
-  cur=L.slice();cur[sel]=k;say('');render()}
-/* ---------- un tour ---------- */
-function startPlay(){chain=[pz.a];cur=pz.a.split('');sel=firstDiff(pz.a);hints=0;t0=Date.now();playing=true;say('');
-  clearInterval(tick);tick=setInterval(()=>{$('timer').textContent=fmt(Date.now()-t0)},250);$('timer').textContent='0:00';render()}
-function firstDiff(w){for(let i=0;i<N;i++)if(w[i]!==pz.b[i])return i;return 0}
+function press(k){if(!myTurn()||pending)return;sfx('key');cur=last().split('');if(k!=='DEL')cur[sel]=k;say('');render()}
+/* ---------- coups ---------- */
+function check(w){const l=last();if(w===l)return"Change une lettre d'abord";if(diff(w,l)!==1)return'Une seule lettre à la fois';
+  if(!dict(N).set.has(w))return`« ${w} » n'est pas dans le dictionnaire`;if(g.chain.includes(w))return'Ce mot est déjà utilisé';return null}
 function bad(t){say(t);sfx('bad');const w=$('curW');if(w){w.classList.remove('bad');void w.offsetWidth;w.classList.add('bad')}}
-function validate(){if(!playing)return;const w=cur.join(''),l=last();
-  if(w===l)return bad('Change une lettre d\'abord');
-  if(diff(w,l)!==1)return bad('Une seule lettre à la fois');
-  if(!dict(N).set.has(w))return bad(`« ${w} » n'est pas dans le dictionnaire`);
-  if(chain.includes(w))return bad('Ce mot est déjà utilisé');
-  addWord(w)}
-function addWord(w){chain.push(w);cur=w.split('');sel=firstDiff(w);sfx('ok');render();const ws=$('ladder').querySelectorAll('.word:not(.cur):not(.target)');const lw=ws[ws.length-1];if(lw)lw.classList.add('pop');
-  if(mode==='host'||mode==='guest')net&&net.send({t:'prog',round,steps:steps()});
-  if(done())finish(false)}
-$('bOk').onclick=validate;
-$('bUndo').onclick=()=>{if(!playing||chain.length<2)return;chain.pop();cur=last().split('');sel=firstDiff(last());say('');render();if(net)net.send({t:'prog',round,steps:steps()})};
-$('bHint').onclick=()=>{if(!playing)return;const av=new Set(chain),p=path(N,last(),pz.b,av,dict(N).common)||path(N,last(),pz.b,av);if(!p){bad('Pas de chemin d\'ici : reviens en arrière');return}
-  hints++;say(`Indice : ${p[1]} (+1 étape)`);addWord(p[1])};
-$('bGive').onclick=()=>{if(playing)finish(true)};
-function finish(gaveUp){playing=false;clearInterval(tick);const r={steps:steps(),time:Date.now()-t0,path:chain.slice(),gaveUp};
-  if(mode==='local'){res[turnP]=r;if(!res[1-turnP])passTo(1-turnP);else localResult()}
-  else if(mode==='ai'){clearTimeout(aiT);if(gaveUp)endRound(1,r,{path:aiPath,steps:aiPath.length-1});else endRound(0,r,{path:aiPath.slice(0,aiStep+1),steps:aiStep,unfinished:true})}
-  else if(mode==='host'){res[0]=r;if(winner===null){winner=gaveUp?1:0;wins[winner]++;sendResult()}}
-  else if(mode==='guest'){res[1]=r;say(gaveUp?'Tu as abandonné…':'Bravo ! On attend la confirmation…');sendDone()}}
+function validate(){if(!myTurn()||pending)return;const w=cur.join(''),e=check(w);if(e)return bad(e);play(w)}
+function play(w){if(mode==='guest'){pending={t:'move',round:g.round,len:g.chain.length,w};say('Envoi…');sendPending();hud();return}apply(g.turn,w);afterChange()}
+function pass(auto){if(!myTurn()||pending)return;if(mode==='guest'){pending={t:'pass',round:g.round,len:g.chain.length};sendPending();hud();return}applyPass(g.turn,auto);afterChange()}
+function apply(who,w){g.chain.push(w);g.by.push(who);g.passes=0;sfx(who===me||mode==='local'?'ok':'opp');
+  if(w===g.pz.b){g.winner=2;wins[0]++;wins[1]++}else{g.turn=1-who;g.note=''}g.t=Date.now()}
+function applyPass(who,auto){g.turn=1-who;g.passes++;g.note=auto?`${names[who]} a mis trop de temps : tour passé`:`${names[who]} passe son tour`;if(g.passes>=4){g.winner=-1}g.t=Date.now()}
+function afterChange(){newTurn();if(mode==='host'&&net)net.send(stateMsg());render();if(g.winner!=null)return endRound();if(mode==='ai'&&g.turn===1)aiMove()}
+function newTurn(){turnT0=Date.now();cur=last().split('');sel=firstDiff(last());say(g.note||'')}
+$('bOk').onclick=validate;$('bPass').onclick=()=>pass(false);
+$('bHint').onclick=()=>{if(!myTurn())return;const used=g.hints||(g.hints=[0,0]),who=mode==='local'?g.turn:me;if(used[who]>=2){bad('Plus d\'indice pour ce mot');return}
+  const av=new Set(g.chain),p=path(N,last(),g.pz.b,av,dict(N).common)||path(N,last(),g.pz.b,av);if(!p){bad('Aucun chemin : passe ton tour');return}
+  used[who]++;cur=p[1].split('');sel=diff(p[1],last())?[...p[1]].findIndex((c,i)=>c!==last()[i]):0;say(`Indice : ${p[1]} (${2-used[who]} restant${2-used[who]>1?'s':''})`);render()};
+setInterval(()=>{if(!g||g.winner!=null){$('timer').textContent='';return}const r=Math.max(0,TURN_MS-(Date.now()-turnT0));$('timer').textContent=Math.ceil(r/1000)+'s';
+  $('timer').style.color=r<10000?'var(--coral)':'var(--y)';if(r===0&&myTurn()&&!pending)pass(true)},250);
+/* ---------- l'ordi ---------- */
+function aiMove(){clearTimeout(aiT);aiT=setTimeout(()=>{if(mode!=='ai'||!g||g.winner!=null||g.turn!==1)return;
+  const {nb,common}=dict(N),l=last(),used=new Set(g.chain),c=(nb.get(l)||[]).filter(w=>!used.has(w));
+  if(!c.length){applyPass(1);afterChange();return}
+  if(c.includes(g.pz.b)){apply(1,g.pz.b);afterChange();return}
+  const cm=c.filter(w=>common.has(w)),P=cm.length?cm:c;
+  let w;if(Math.random()<.8){const best=Math.min(...P.map(x=>dist.get(x)??99));const B=P.filter(x=>(dist.get(x)??99)===best);w=B[Math.floor(Math.random()*B.length)]}else w=P[Math.floor(Math.random()*P.length)];
+  apply(1,w);afterChange()},1300+Math.random()*1700)}
 /* ---------- manches ---------- */
-function pickPuzzle(){const P=dict(N).puzzles,p=P[Math.floor(Math.random()*P.length)];return{a:p[0],b:p[1],best:p[2],n:N}}
-function setPuzzle(p){N=p.n;pz=p;dict(N);const bp=path(N,p.a,p.b,null,dict(N).common)||path(N,p.a,p.b);pz.best=bp?bp.length-1:p.best;pz.sol=bp}
-function newRound(p){round++;setPuzzle(p||pickPuzzle());res=[null,null];winner=null;oppSteps=0;aiStep=0;$('result').classList.add('hidden');show('game');
-  if(mode==='local'){turnP=round%2?0:1;passTo(turnP)}
-  else{startPlay();if(mode==='ai')startAi()}}
-function passTo(i){turnP=i;chain=[pz.a];cur=pz.a.split('');hud();$('ladder').innerHTML='';$('passT').textContent=`À ${names[i]} !`;
-  $('passS').textContent=res[1-i]?`${names[1-i]} a fini. Ne lui montre pas l'écran… à ton tour sur le même mot.`:`L'autre joueur ne regarde pas l'écran. Va de ${pz.a} à ${pz.b}.`;$('pass').classList.remove('hidden')}
-$('bReady').onclick=()=>{$('pass').classList.add('hidden');startPlay()};
-function startAi(){aiPath=pz.sol;const per=(N===4?7000:9000);const next=()=>{aiT=setTimeout(()=>{if(!playing)return;aiStep++;sfx('opp');hud();
-  if(aiStep>=aiPath.length-1){playing=false;clearInterval(tick);endRound(1,{steps:steps(),time:Date.now()-t0,path:chain.slice(),unfinished:true},{path:aiPath,steps:aiPath.length-1})}else next()},per*(.6+Math.random()*.9))};next()}
-function ladderMini(p,dim){return p.map(w=>`<div class="word">${w.split('').map(c=>`<div class="t small">${c}</div>`).join('')}</div>`).join('')+(dim?'<p class="small">pas fini</p>':'')}
-function showResult(title,sub,a,b,la,lb){$('rT').textContent=title;$('rS').textContent=sub;
-  $('rBody').innerHTML=`<div><h3>${esc(la)}</h3>${ladderMini(a.path,a.unfinished||a.gaveUp)}</div><div><h3>${esc(lb)}</h3>${b?ladderMini(b.path,b.unfinished||b.gaveUp):'<p class="small">…</p>'}</div>`;
-  $('rBest').textContent=pz.sol?`Chemin le plus court : ${pz.sol.join(' → ')}`:'';$('bNext').textContent=mode==='guest'?'Demander la manche suivante':'Manche suivante';$('result').classList.remove('hidden')}
+function pickPuzzle(){const P=dict(N).puzzles,p=P[Math.floor(Math.random()*P.length)];return{a:p[0],b:p[1],n:N}}
+function newRound(pz,start){const r=g?g.round+1:1;N=pz.n;dict(N);g={round:r,pz,chain:[pz.a],by:[-1],turn:start,winner:null,passes:0,hints:[0,0],note:'',t:Date.now()};
+  dist=distFrom(N,pz.b);pending=null;shown=-1;$('result').classList.add('hidden');show('game');newTurn();say('');render();
+  if(mode==='host'&&net)net.send(stateMsg());if(mode==='ai'&&g.turn===1)aiMove()}
+function nextRound(){newRound(pickPuzzle(),g?(g.round%2):0)}
+function endRound(){if(shown===g.round)return;shown=g.round;clearTimeout(aiT);const w=g.winner,sol=path(N,g.pz.a,g.pz.b,null,dict(N).common)||path(N,g.pz.a,g.pz.b);
+  const best=sol?sol.length-1:0,used=g.chain.length-1,stars=w<0?0:used<=best?3:used<=best+2?2:1;sfx(w<0?'lose':'win');if(w>=0)confetti();
+  $('rT').innerHTML=w<0?'Vous êtes bloqués…':`Bravo, vous avez trouvé !<br><span style="letter-spacing:6px">${'★'.repeat(stars)}<span style="opacity:.25">${'★'.repeat(3-stars)}</span></span>`;
+  $('rS').textContent=w<0?'Pas grave : voici une solution possible, on retente avec un autre mot ?':`${g.pz.b} trouvé en ${used} étape${used>1?'s':''} à deux (le minimum était ${best}). Défis réussis ensemble : ${wins[0]}.`;
+  $('rBody').innerHTML=`<div style="grid-column:1/-1">${g.chain.map((x,i)=>`<div class="word mini" style="--pc:${g.by[i]<0?'#ffffff30':PC[g.by[i]]}">${[...x].map(c=>`<div class="t small">${c}</div>`).join('')}</div>`).join('')}</div>`;
+  $('rBest').textContent=sol?`Chemin le plus court : ${sol.join(' → ')}`:'';$('bNext').textContent=mode==='guest'?'Demander un nouveau mot':'Nouveau mot';
+  setTimeout(()=>$('result').classList.remove('hidden'),700);hud()}
 function confetti(){for(let k=0;k<60;k++){const c=document.createElement('i');c.className='conf';c.style.left=Math.random()*100+'vw';c.style.background=['#ffc531','#ff6a2b','#2fd08f','#fff'][k%4];c.style.animationDuration=1.8+Math.random()*1.8+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),4200)}}
-function endRound(w,mineR,oppR){wins[w]++;hud();const iWin=w===me;sfx(iWin?'win':'lose');if(iWin)confetti();
-  showResult(iWin?'Gagné !':mode==='ai'?"L'ordi gagne…":`${names[w]} gagne…`,iWin?`En ${mineR.steps} étapes et ${fmt(mineR.time)}`:'Revanche ?',mineR,oppR,names[me],names[1-me])}
-function localResult(){const [a,b]=res,score=r=>r.gaveUp?1e9:r.steps*1e6+r.time;let w=score(a)===score(b)?null:score(a)<score(b)?0:1;
-  if(w!==null)wins[w]++;hud();sfx('win');confetti();
-  showResult(w===null?'Égalité !':`${names[w]} gagne !`,w===null?'':`${res[w].steps} étapes en ${fmt(res[w].time)}`,a,b,names[0],names[1])}
-$('bNext').onclick=()=>{if(mode==='guest'){net&&net.send({t:'again',round});$('rS').textContent='Demande envoyée…';return}
-  if(mode==='host'){hostRound();return}newRound()};
+$('bNext').onclick=()=>{if(mode==='guest'){net&&net.send({t:'again',round:g.round});$('rS').textContent='Demande envoyée…';return}nextRound()};
 $('bMenu').onclick=$('bQuit').onclick=goHome;
 /* ---------- réseau ---------- */
 const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mqtt'];
-const myId=Math.random().toString(36).slice(2,10);let net=null,guestId=null,lastPeer=0,hbT=null,online=true,doneT=null,curMsg=null;
+const myId=Math.random().toString(36).slice(2,10);let net=null,guestId=null,lastPeer=0,hbT=null,online=true,pendT=null,gotState=false;
 function loadMqtt(){return new Promise((res,rej)=>{if(window.mqtt)return res(window.mqtt);let n=0;const t=setInterval(()=>{if(window.mqtt){clearInterval(t);res(window.mqtt)}else if(++n>80){clearInterval(t);rej()}},100)})}
-async function connect(code,onMsg,onUp){const lib=await loadMqtt();const topic='laddoogames/mots/v1/'+code,clients=[],seen=new Set();let n=0,up=false;
+async function connect(code,onMsg,onUp){const lib=await loadMqtt();const topic='laddoogames/mots/v2/'+code,clients=[],seen=new Set();let n=0,up=false;
   BROKERS.forEach(u=>{try{const c=lib.connect(u,{clientId:'mm_'+myId+'_'+Math.random().toString(36).slice(2,6),clean:true,reconnectPeriod:2000,connectTimeout:8000,keepalive:30});
     c.on('connect',()=>{c.subscribe(topic);if(!up){up=true;onUp()}});
     c.on('message',(t,b)=>{let m;try{m=JSON.parse(b.toString())}catch(e){return}if(!m||m.from===myId||seen.has(m.mid))return;seen.add(m.mid);if(seen.size>400)seen.delete(seen.values().next().value);onMsg(m)});
     c.on('error',()=>{});clients.push(c)}catch(e){}});
   return{send(m){m.from=myId;m.mid=myId+'-'+(n++);const s=JSON.stringify(m);clients.forEach(c=>{if(c.connected)c.publish(topic,s)})},close(){clients.forEach(c=>{try{c.end(true)}catch(e){}})}}}
-function startHB(){clearInterval(hbT);hbT=setInterval(()=>{if(!net)return;if(mode==='host'&&guestId)net.send(stateMsg());if(mode==='guest')net.send({t:'hb'});
+function startHB(){clearInterval(hbT);hbT=setInterval(()=>{if(!net)return;if(mode==='host'&&guestId&&g)net.send(stateMsg());if(mode==='guest')net.send({t:'hb'});
   const gone=lastPeer&&Date.now()-lastPeer>9000;if(gone===online){online=!gone;$('lost').classList.toggle('hidden',online);$('lost').innerHTML=`<span class="spin"></span>${esc(names[1-me])} ne répond plus… on attend.`}},2500)}
-const stateMsg=()=>({t:'state',names,wins,round,pz:{a:pz.a,b:pz.b,best:pz.best,n:pz.n},winner,steps:steps(),paths:[res[0]&&res[0].path,res[1]&&res[1].path]});
-function hostRound(){newRound();net.send(stateMsg())}
-function sendResult(){net.send(stateMsg());hostShowResult()}
-function hostShowResult(){playing=false;clearInterval(tick);const mine=res[0]||{path:chain.slice(),steps:steps(),unfinished:true},opp=res[1]||{path:[pz.a],steps:oppSteps,unfinished:true};
-  hud();const iWin=winner===0;sfx(iWin?'win':'lose');if(iWin)confetti();showResult(iWin?'Gagné !':`${names[1]} gagne…`,iWin?`En ${mine.steps} étapes et ${fmt(mine.time||0)}`:'Revanche ?',mine,opp,names[0],names[1])}
+const stateMsg=()=>({t:'state',names,wins,g:{round:g.round,pz:g.pz,chain:g.chain,by:g.by,turn:g.turn,winner:g.winner,passes:g.passes,note:g.note}});
 function onHostMsg(m){if(guestId&&m.from!==guestId){if(m.t==='join'&&Date.now()-lastPeer>12000)guestId=null;else{if(m.t==='join')net.send({t:'full',to:m.from});return}}
-  if(m.t==='join'){const first=!guestId;guestId=m.from;lastPeer=Date.now();names[1]=String(m.name||'Ami').slice(0,14);if(first&&round===0){startHB();online=true;hostRound()}else net.send(stateMsg());return}
-  if(m.from!==guestId)return;lastPeer=Date.now();
-  if(m.t==='prog'&&m.round===round){oppSteps=m.steps|0;sfx('opp');hud()}
-  if(m.t==='done'&&m.round===round){res[1]={path:Array.isArray(m.path)?m.path.slice(0,30).map(String):[],steps:m.steps|0,time:m.time|0,gaveUp:!!m.gaveUp};oppSteps=m.steps|0;
-    if(winner===null){winner=m.gaveUp?0:1;wins[winner]++;sendResult()}else net.send(stateMsg())}
-  if(m.t==='again'&&m.round===round&&winner!==null)hostRound()}
-let gotState=false;
+  if(m.t==='join'){const first=!guestId;guestId=m.from;lastPeer=Date.now();names[1]=String(m.name||'Ami').slice(0,14);
+    if(first&&!g){startHB();online=true;newRound(pickPuzzle(),0)}else net.send(stateMsg());return}
+  if(m.from!==guestId)return;lastPeer=Date.now();if(!g)return;
+  if(m.t==='move'&&m.round===g.round&&m.len===g.chain.length&&g.turn===1&&g.winner==null){const w=String(m.w||'').toUpperCase();if(!check(w)){apply(1,w);afterChange()}else net.send(stateMsg())}
+  else if(m.t==='pass'&&m.round===g.round&&m.len===g.chain.length&&g.turn===1&&g.winner==null){applyPass(1);afterChange()}
+  else if(m.t==='again'&&m.round===g.round&&g.winner!=null)nextRound()}
 function onGuestMsg(m){if(m.to&&m.to!==myId)return;
   if(m.t==='full'){$('joinStat').textContent='Cette partie est déjà complète.';net.close();net=null;return}
-  if(m.t!=='state'||!m.pz)return;lastPeer=Date.now();names[0]=String(m.names[0]||'Ami').slice(0,14);wins=m.wins.slice(0,2).map(x=>x|0);
+  if(m.t!=='state'||!m.g||!m.g.pz)return;lastPeer=Date.now();names[0]=String(m.names&&m.names[0]||'Ami').slice(0,14);wins=(m.wins||[0,0]).slice(0,2).map(x=>x|0);
   if(!gotState){gotState=true;startHB();online=true}
-  if(m.round>round){round=m.round-1;newRound({a:String(m.pz.a),b:String(m.pz.b),best:m.pz.best|0,n:m.pz.n===5?5:4})}
-  if(m.round===round){if(winner===null){oppSteps=m.steps|0;hud()}
-    if(m.winner!==null&&winner===null){winner=m.winner;clearTimeout(doneT);playing=false;clearInterval(tick);
-      const mine=res[1]||{path:chain.slice(),steps:steps(),unfinished:true},opp={path:Array.isArray(m.paths&&m.paths[0])?m.paths[0].map(String):[pz.a],steps:m.steps|0,unfinished:winner!==0};
-      hud();const iWin=winner===1;sfx(iWin?'win':'lose');if(iWin)confetti();showResult(iWin?'Gagné !':`${names[0]} gagne…`,iWin?`En ${mine.steps} étapes et ${fmt(mine.time||0)}`:'Revanche ?',mine,opp,names[1],names[0])}}}
-function sendDone(){clearTimeout(doneT);const r=res[1];const go=()=>{if(!net||winner!==null)return;net.send({t:'done',round,steps:r.steps,time:r.time,path:r.path,gaveUp:r.gaveUp});doneT=setTimeout(go,2000)};go()}
+  const s=m.g,pz={a:String(s.pz.a),b:String(s.pz.b),n:s.pz.n===5?5:4};
+  if(!g||s.round!==g.round){N=pz.n;dict(N);g={round:s.round|0,pz,chain:[pz.a],by:[-1],turn:0,winner:null,passes:0,hints:[0,0],note:''};dist=distFrom(N,pz.b);shown=-1;$('result').classList.add('hidden');show('game')}
+  const changed=s.chain.length!==g.chain.length||s.turn!==g.turn||s.winner!==g.winner;
+  g.chain=s.chain.map(String).slice(0,80);g.by=s.by.map(x=>x|0).slice(0,80);g.turn=s.turn===1?1:0;g.winner=s.winner==null?null:s.winner|0;g.passes=s.passes|0;g.note=String(s.note||'');
+  if(pending&&(g.chain.length!==pending.len||g.turn!==1||g.winner!=null)){pending=null;clearTimeout(pendT)}
+  if(changed){if(g.turn===me&&g.chain.length>1&&g.by[g.by.length-1]===0)sfx('opp');newTurn();render();if(g.winner!=null)endRound()}else hud()}
+function sendPending(){clearTimeout(pendT);const go=()=>{if(!net||!pending)return;net.send(pending);pendT=setTimeout(go,2000)};go()}
 /* ---------- écrans ---------- */
 const savedName=(()=>{try{return localStorage.getItem('lr_name')||''}catch(e){return''}})();$('nameH').value=savedName;
 const keepName=v=>{try{localStorage.setItem('lr_name',v)}catch(e){}};
-function reset(){wins=[0,0];round=0;res=[null,null];winner=null;gotState=false;guestId=null}
-$('bLocal').onclick=()=>{reset();mode='local';me=0;names=['Joueur 1','Joueur 2'];newRound()};
-$('bAi').onclick=()=>{reset();mode='ai';me=0;names=[$('nameH').value.trim()||'Toi',"L'ordi"];newRound()};
+function reset(){wins=[0,0];g=null;gotState=false;guestId=null;pending=null;clearTimeout(aiT)}
+$('bLocal').onclick=()=>{reset();mode='local';me=0;names=['Joueur 1','Joueur 2'];nextRound()};
+$('bAi').onclick=()=>{reset();mode='ai';me=0;names=[$('nameH').value.trim()||'Toi',"L'ordi"];nextRound()};
 $('bHost').onclick=async()=>{reset();box('hostBox');if(net){net.close();net=null}const n=$('nameH').value.trim()||'Joueur 1';names=[n,'…'];mode='host';me=0;
   const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';const code=Array.from({length:4},()=>A[Math.floor(Math.random()*A.length)]).join('');
   $('codeTxt').textContent=code;$('bShare').textContent="Envoyer l'invitation";$('hostStat').innerHTML='<span class="spin"></span>Connexion…';
@@ -334,15 +319,16 @@ async function joinCode(code){reset();box('joinBox');$('joinCode').textContent=c
   try{net=await connect(code,onGuestMsg,()=>{$('joinStat').innerHTML='<span class="spin"></span>Connexion à la partie…';
     const tryJoin=()=>{if(!net||gotState)return;net.send({t:'join',name:n});setTimeout(tryJoin,2000)};tryJoin();
     setTimeout(()=>{if(!gotState&&mode==='guest')$('joinStat').textContent='Partie introuvable : ton ami a peut-être fermé la page. Demande-lui une nouvelle invitation.'},15000)})}catch(e){$('joinStat').textContent='Connexion impossible. Vérifie internet et réessaie.'}}
-function goHome(){if(net){net.close();net=null}clearInterval(hbT);clearInterval(tick);clearTimeout(aiT);clearTimeout(doneT);playing=false;mode=null;
-  ['result','pass','lost'].forEach(k=>$(k).classList.add('hidden'));history.replaceState(null,'',location.pathname);box('menu');show('home')}
+function goHome(){if(net){net.close();net=null}clearInterval(hbT);clearTimeout(aiT);clearTimeout(pendT);mode=null;g=null;
+  ['result','lost'].forEach(k=>$(k).classList.add('hidden'));history.replaceState(null,'',location.pathname);box('menu');show('home')}
 $('bBack1').onclick=$('bBack2').onclick=goHome;
 $('bHub').onclick=()=>{location.href='./'};
 $('bRules1').onclick=$('bRules2').onclick=()=>$('rules').classList.remove('hidden');
 $('bRulesOk').onclick=()=>$('rules').classList.add('hidden');
 const h=(location.hash||'').slice(1).toUpperCase();if(/^[A-Z0-9]{4}$/.test(h))setTimeout(()=>joinCode(h),50);
-window.__mm={get chain(){return chain},get pz(){return pz},get wins(){return wins},get round(){return round},addWord:w=>addWord(w),get playing(){return playing}};
+window.__mm={get g(){return g},get wins(){return wins},play:w=>{cur=w.split('');validate()},pass:()=>pass(false)};
 }
+
 </script>
 </body>
 </html>
