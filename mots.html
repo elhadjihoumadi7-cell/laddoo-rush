@@ -42,13 +42,17 @@ input::placeholder{color:#ffffff80}
 /* tuiles */
 .word{display:flex;gap:6px;justify-content:center}
 .t{width:var(--tile);height:var(--tile);border-radius:14px;display:grid;place-items:center;font:700 calc(var(--tile)*.52) Fredoka,sans-serif;background:#fff4df;color:#3b2a12;box-shadow:0 4px 0 #c9b48f;position:relative;transition:transform .15s,background .15s}
-.t.ok{background:#bff3dc;box-shadow:0 4px 0 #5fbf95}
-.t.ch{background:var(--y);box-shadow:0 4px 0 #b8860b}
+.t.ok{background:var(--y);box-shadow:0 4px 0 #b8860b;color:#3b2a00}
+.t.ch{background:#9fd8ff;box-shadow:0 4px 0 #5a9cc0}
 .t.small{--tile:clamp(30px,8vw,38px);border-radius:9px;box-shadow:0 3px 0 #c9b48f}
 .word.target .t{background:linear-gradient(#ffd75e,#ffb627);box-shadow:0 4px 0 #b8760b;color:#4a2c00}
 .word.cur .t{cursor:pointer;background:#fff;box-shadow:0 4px 0 #9fb5b1}
 .word.cur .t.sel{outline:3px solid var(--o);outline-offset:2px;transform:translateY(-3px)}
-.word.cur .t.ch{background:var(--y)}
+.word.cur .t.ch{background:#9fd8ff;box-shadow:0 4px 0 #5a9cc0}.word.cur .t.ok{background:var(--y);box-shadow:0 4px 0 #b8860b}
+.word.line{--tile:clamp(54px,17vw,78px);gap:9px}.word.line .t{border-radius:18px}
+.word.goal .t{--tile:clamp(36px,10vw,44px);background:transparent;border:2px dashed rgba(255,255,255,.45);color:#fff;box-shadow:none;border-radius:11px}
+.lbl{margin:0 0 6px;font-size:14px;opacity:.7;text-align:center}
+.ladder{padding-top:14px!important}
 .word.bad{animation:shake .35s}
 @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .word.pop .t{animation:pop .35s}
@@ -101,7 +105,7 @@ input::placeholder{color:#ffffff80}
     <div class="dots"></div>
     <div class="word"><div class="t small">F</div><div class="t small ok">E</div><div class="t small">U</div><div class="t small">X</div></div>
     <div class="dots"></div>
-    <div class="word target"><div class="t small">M</div><div class="t small">O</div><div class="t small">T</div><div class="t small">O</div></div>
+    <div class="word goal"><div class="t">M</div><div class="t">O</div><div class="t">T</div><div class="t">O</div></div>
   </div>
   <div class="sheet" id="menu">
     <div class="chips"><button class="chip on" data-n="4">4 lettres</button><button class="chip" data-n="5">5 lettres</button></div>
@@ -152,10 +156,10 @@ input::placeholder{color:#ffffff80}
   <h2>Les règles</h2>
   <ul>
     <li>On part du premier mot et on doit arriver <b>ensemble</b> au <b>mot cible</b> (en doré).</li>
-    <li>On joue <b>chacun son tour</b> sur la même échelle : à ton tour, tu changes <b>une seule lettre</b> du dernier mot.</li>
+    <li>On joue <b>chacun son tour</b> sur le même mot : à ton tour, tu changes <b>une seule lettre</b>.</li>
     <li>Chaque mot doit être un <b>vrai mot français</b> (sans accents) et jamais déjà utilisé.</li>
     <li>Quand le mot cible est trouvé, <b>vous gagnez tous les deux</b>. Moins vous faites d'étapes, plus vous avez d'étoiles.</li>
-    <li>Les lettres en vert sont déjà bien placées. La bordure de chaque mot montre qui l'a joué.</li>
+    <li>Une lettre devient <b style="color:var(--y)">jaune</b> quand elle est déjà à la bonne place.</li>
     <li>Coincés ? Appuyez sur <b>Aide</b> : <b>3 indices par partie</b> (quelle lettre changer, le prochain mot ou toute la solution). Annuler le dernier mot est gratuit. Vous pouvez aussi <b>passer</b> votre tour.</li>
   </ul>
   <button id="bRulesOk">Compris</button>
@@ -198,14 +202,13 @@ const firstDiff=w=>{for(let i=0;i<w.length;i++)if(w[i]!==g.pz.b[i])return i;retu
 function distFrom(n,b){const {nb}=dict(n),d=new Map([[b,0]]),q=[b];while(q.length){const u=q.shift();for(const v of nb.get(u)||[])if(!d.has(v)){d.set(v,d.get(u)+1);q.push(v)}}return d}
 /* ---------- rendu ---------- */
 const PC=['#ffc531','#ff6a2b'];
-function render(){if(!g)return;const L=$('ladder'),b=g.pz.b;let h='';
-  g.chain.forEach((w,i)=>{const by=g.by[i];h+=`<div class="word played" style="--pc:${by<0?'#ffffff30':PC[by]}">${[...w].map((c,k)=>`<div class="t ${c===b[k]?'ok':''}">${c}</div>`).join('')}</div><div class="dots"></div>`});
-  if(g.winner==null){if(myTurn())h+=`<div class="word cur" id="curW">${cur.map((c,i)=>`<div class="t ${c!==last()[i]?'ch':''} ${i===sel?'sel':''} ${c===b[i]?'ok':''}" data-i="${i}">${c}</div>`).join('')}</div><div class="dots"></div>`;
-    else h+=`<div class="wait" style="--pc:${PC[g.turn]}"><span class="spin"></span>${esc(names[g.turn])} réfléchit…</div><div class="dots"></div>`}
-  h+=`<div class="word target">${[...b].map(c=>`<div class="t">${c}</div>`).join('')}</div>`;
-  L.innerHTML=h;L.scrollTop=L.scrollHeight;
+function render(){if(!g)return;const L=$('ladder'),b=g.pz.b,lw=last();
+  let h=`<p class="lbl">Mot à trouver</p><div class="word goal">${[...b].map(c=>`<div class="t">${c}</div>`).join('')}</div><p class="lbl" style="margin-top:14px">${g.winner!=null?'Trouvé !':'Mot actuel'}</p>`;
+  const pop=g.chain.length!==render.n;render.n=g.chain.length;
+  if(g.winner==null&&myTurn())h+=`<div class="word cur line ${pop?'pop':''}" id="curW">${cur.map((c,i)=>`<div class="t ${c!==lw[i]?'ch':''} ${i===sel?'sel':''} ${c===b[i]&&c===lw[i]?'ok':''}" data-i="${i}">${c}</div>`).join('')}</div>`;
+  else h+=`<div class="word line ${pop?'pop':''}">${[...lw].map((c,i)=>`<div class="t ${c===b[i]?'ok':''}">${c}</div>`).join('')}</div>`;
+  L.innerHTML=h;
   L.querySelectorAll('#curW .t').forEach(t=>t.onclick=()=>{sel=+t.dataset.i;sfx('key');render()});
-  const lw=L.querySelectorAll('.played');if(lw.length>1&&g.chain.length!==render.n){lw[lw.length-1].classList.add('pop')}render.n=g.chain.length;
   hud()}
 function hud(){[0,1].forEach(i=>{$('n'+i).textContent=names[i]+((mode==='host'||mode==='guest')&&i===me?' (toi)':'');
   $('s'+i).textContent=`${g.by.filter(x=>x===i).length} mot${g.by.filter(x=>x===i).length>1?'s':''} posé${g.by.filter(x=>x===i).length>1?'s':''}`;
