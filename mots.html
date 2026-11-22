@@ -51,6 +51,8 @@ input::placeholder{color:#ffffff80}
 .word.cur .t.ch{background:#9fd8ff;box-shadow:0 4px 0 #5a9cc0}.word.cur .t.ok{background:var(--y);box-shadow:0 4px 0 #b8860b}
 .word.line{--tile:clamp(54px,17vw,78px);gap:9px}.word.line .t{border-radius:18px}
 .word.goal .t{--tile:clamp(36px,10vw,44px);background:transparent;border:2px dashed rgba(255,255,255,.45);color:#fff;box-shadow:none;border-radius:11px}
+.board{margin:0 0 10px;text-align:center;font-size:19px;font-weight:500}.board b{color:var(--y);letter-spacing:1px}
+.word.line .t.ok::after{content:'';position:absolute;left:20%;right:20%;bottom:9%;height:4px;border-radius:3px;background:#3b2a00}
 .lbl{margin:0 0 6px;font-size:14px;opacity:.7;text-align:center}
 .ladder{padding-top:14px!important}
 .word.bad{animation:shake .35s}
@@ -159,7 +161,8 @@ input::placeholder{color:#ffffff80}
     <li>On joue <b>chacun son tour</b> sur le même mot : à ton tour, tu changes <b>une seule lettre</b>.</li>
     <li>Chaque mot doit être un <b>vrai mot français</b> (sans accents) et jamais déjà utilisé.</li>
     <li>Quand le mot cible est trouvé, <b>vous gagnez tous les deux</b>. Moins vous faites d'étapes, plus vous avez d'étoiles.</li>
-    <li>Une lettre devient <b style="color:var(--y)">jaune</b> quand elle est déjà à la bonne place.</li>
+    <li>Une lettre devient <b style="color:var(--y)">jaune et soulignée</b> quand elle est déjà à la bonne place.</li>
+    <li>Attention : vous avez un <b>nombre d'étapes limité</b> (le minimum + 4). Au-delà, la manche est perdue.</li>
     <li>Coincés ? Appuyez sur <b>Aide</b> : <b>3 indices par partie</b> (quelle lettre changer, le prochain mot ou toute la solution). Annuler le dernier mot est gratuit. Vous pouvez aussi <b>passer</b> votre tour.</li>
   </ul>
   <button id="bRulesOk">Compris</button>
@@ -203,7 +206,7 @@ function distFrom(n,b){const {nb}=dict(n),d=new Map([[b,0]]),q=[b];while(q.lengt
 /* ---------- rendu ---------- */
 const PC=['#ffc531','#ff6a2b'];
 function render(){if(!g)return;const L=$('ladder'),b=g.pz.b,lw=last();
-  let h=`<p class="lbl">Mot à trouver</p><div class="word goal">${[...b].map(c=>`<div class="t">${c}</div>`).join('')}</div><p class="lbl" style="margin-top:14px">${g.winner!=null?'Trouvé !':'Mot actuel'}</p>`;
+  let h=`<p class="board">Passe de <b>${esc(g.pz.a)}</b> à <b>${esc(b)}</b></p><div class="word goal">${[...b].map(c=>`<div class="t">${c}</div>`).join('')}</div><p class="lbl" style="margin-top:14px">${g.winner!=null?'Trouvé !':'Mot actuel'}</p>`;
   const pop=g.chain.length!==render.n;render.n=g.chain.length;
   if(g.winner==null&&myTurn())h+=`<div class="word cur line ${pop?'pop':''}" id="curW">${cur.map((c,i)=>`<div class="t ${c!==lw[i]?'ch':''} ${i===sel?'sel':''} ${c===b[i]&&c===lw[i]?'ok':''}" data-i="${i}">${c}</div>`).join('')}</div>`;
   else h+=`<div class="word line ${pop?'pop':''}">${[...lw].map((c,i)=>`<div class="t ${c===b[i]?'ok':''}">${c}</div>`).join('')}</div>`;
@@ -213,8 +216,8 @@ function render(){if(!g)return;const L=$('ladder'),b=g.pz.b,lw=last();
 function hud(){[0,1].forEach(i=>{$('n'+i).textContent=names[i]+((mode==='host'||mode==='guest')&&i===me?' (toi)':'');
   $('s'+i).textContent=`${g.by.filter(x=>x===i).length} mot${g.by.filter(x=>x===i).length>1?'s':''} posé${g.by.filter(x=>x===i).length>1?'s':''}`;
   $('p'+i).classList.toggle('on',g.winner==null&&g.turn===i)});
-  const d=dist&&dist.get(last()),d0=dist&&dist.get(g.pz.a)||1;[0,1].forEach(i=>$('g'+i).style.width=(g.winner===2?100:Math.max(0,(1-(d??d0)/d0)*100))+'%');$('goal').innerHTML=`${g.pz.a} → ${g.pz.b}<br><span style="font-size:12px;opacity:.7">${d!=null?`encore ${d} étape${d>1?'s':''} au mieux`:''}</span>`;
-  $('bOk').disabled=$('bPass').disabled=$('bHint').disabled=!myTurn()||!!pending;$('timer').textContent=`${g.chain.length-1} étape${g.chain.length>2?'s':''}`;$('bHint').textContent=`Aide (${g.helps})`;
+  const d=dist&&dist.get(last()),d0=dist&&dist.get(g.pz.a)||1;[0,1].forEach(i=>$('g'+i).style.width=(g.winner===2?100:Math.max(0,(1-(d??d0)/d0)*100))+'%');$('goal').innerHTML=`<span style="font-size:13px;opacity:.75">${d!=null?`encore ${d} étape${d>1?'s':''} au mieux`:''}</span>`;
+  $('bOk').disabled=$('bPass').disabled=$('bHint').disabled=!myTurn()||!!pending;const st=g.chain.length-1;$('timer').innerHTML=`${st}<span style="opacity:.6">/${g.limit}</span>`;$('timer').style.color=g.limit-st<=2?'var(--coral)':'var(--y)';$('bHint').textContent=`Aide (${g.helps})`;
   $('turnTxt').innerHTML=g.winner!=null?'':myTurn()?(mode==='local'?`À <b style="color:${PC[g.turn]}">${esc(names[g.turn])}</b> de jouer`:'<b style="color:var(--y)">À toi</b> de jouer'):`Au tour de <b style="color:${PC[g.turn]}">${esc(names[g.turn])}</b>`}
 function say(t){$('msg').textContent=t}
 /* ---------- clavier ---------- */
@@ -232,7 +235,7 @@ function validate(){if(!myTurn()||pending)return;const w=cur.join(''),e=check(w)
 function play(w){if(mode==='guest'){pending={t:'move',round:g.round,len:g.chain.length,w};say('Envoi…');sendPending();hud();return}apply(g.turn,w);afterChange()}
 function pass(auto){if(!myTurn()||pending)return;if(mode==='guest'){pending={t:'pass',round:g.round,len:g.chain.length};sendPending();hud();return}applyPass(g.turn,auto);afterChange()}
 function apply(who,w){g.chain.push(w);g.by.push(who);g.passes=0;sfx(who===me||mode==='local'?'ok':'opp');
-  if(w===g.pz.b){g.winner=2;wins[0]++;wins[1]++}else{g.turn=1-who;g.note=''}g.t=Date.now()}
+  if(w===g.pz.b){g.winner=2;wins[0]++;wins[1]++}else if(g.limit&&g.chain.length-1>=g.limit){g.winner=-2}else{g.turn=1-who;g.note=''}g.t=Date.now()}
 function applyPass(who,auto){g.turn=1-who;g.passes++;g.note=auto?`${names[who]} a mis trop de temps : tour passé`:`${names[who]} passe son tour`;if(g.passes>=4){g.winner=-1}g.t=Date.now()}
 function afterChange(){newTurn();if(mode==='host'&&net)net.send(stateMsg());render();if(g.winner!=null)return endRound();if(mode==='ai'&&g.turn===1)aiMove()}
 function newTurn(){turnT0=Date.now();$('timer').textContent='';cur=last().split('');sel=firstDiff(last());say(g.note||'')}
@@ -260,13 +263,13 @@ function aiMove(){clearTimeout(aiT);aiT=setTimeout(()=>{if(mode!=='ai'||!g||g.wi
 /* ---------- manches ---------- */
 function pickPuzzle(){const P=dict(N).puzzles,p=P[Math.floor(Math.random()*P.length)];return{a:p[0],b:p[1],n:N}}
 function newRound(pz,start){const r=g?g.round+1:1;N=pz.n;dict(N);g={round:r,pz,chain:[pz.a],by:[-1],turn:start,winner:null,passes:0,hints:[0,0],helps:3,note:'',t:Date.now()};
-  dist=distFrom(N,pz.b);pending=null;shown=-1;$('result').classList.add('hidden');show('game');newTurn();say('');render();
+  dist=distFrom(N,pz.b);g.limit=(dist.get(pz.a)||5)+4;pending=null;shown=-1;$('result').classList.add('hidden');show('game');newTurn();say('');render();
   if(mode==='host'&&net)net.send(stateMsg());if(mode==='ai'&&g.turn===1)aiMove()}
 function nextRound(){newRound(pickPuzzle(),g?(g.round%2):0)}
 function endRound(){if(shown===g.round)return;shown=g.round;clearTimeout(aiT);const w=g.winner,sol=path(N,g.pz.a,g.pz.b,null,dict(N).common)||path(N,g.pz.a,g.pz.b);
   const best=sol?sol.length-1:0,used=g.chain.length-1,stars=w<0?0:used<=best?3:used<=best+2?2:1;sfx(w<0?'lose':'win');if(w>=0)confetti();
-  $('rT').innerHTML=w<0?'Vous êtes bloqués…':`Bravo, vous avez trouvé !<br><span style="letter-spacing:6px">${'★'.repeat(stars)}<span style="opacity:.25">${'★'.repeat(3-stars)}</span></span>`;
-  $('rS').textContent=w<0?'Pas grave : voici une solution possible, on retente avec un autre mot ?':`${g.pz.b} trouvé en ${used} étape${used>1?'s':''} à deux (le minimum était ${best}). Défis réussis ensemble : ${wins[0]}.`;
+  $('rT').innerHTML=w===-2?'Trop d\'étapes…':w<0?'Vous êtes bloqués…':`Bravo, vous avez trouvé !<br><span style="letter-spacing:6px">${'★'.repeat(stars)}<span style="opacity:.25">${'★'.repeat(3-stars)}</span></span>`;
+  $('rS').textContent=w===-2?`Vous aviez droit à ${g.limit} étapes. Voici une solution, on retente avec un autre mot ?`:w<0?'Pas grave : voici une solution possible, on retente avec un autre mot ?':`${g.pz.b} trouvé en ${used} étape${used>1?'s':''} à deux (le minimum était ${best}). Défis réussis ensemble : ${wins[0]}.`;
   $('rBody').innerHTML=`<div style="grid-column:1/-1">${g.chain.map((x,i)=>`<div class="word mini" style="--pc:${g.by[i]<0?'#ffffff30':PC[g.by[i]]}">${[...x].map(c=>`<div class="t small">${c}</div>`).join('')}</div>`).join('')}</div>`;
   $('rBest').textContent=sol?`Chemin le plus court : ${sol.join(' → ')}`:'';$('bNext').textContent=mode==='guest'?'Demander un nouveau mot':'Nouveau mot';
   setTimeout(()=>$('result').classList.remove('hidden'),700);hud()}
