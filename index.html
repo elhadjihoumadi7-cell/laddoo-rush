@@ -260,7 +260,7 @@ async function swapAnim(){const a=[0,1].map(i=>pawns[i].position.clone());const 
 let shaking=false,cupUp=false;
 async function cupDown(){if(!cupUp)return;cupUp=false;die.visible=false;die.position.copy(DIE0);const y=cup.position.y,rx=cup.rotation.x,rz=cup.rotation.z,x=cup.position.x,z=cup.position.z;await tween(220,p=>{cup.position.y=y+(CY+CH-y)*p;cup.rotation.x=rx*(1-p);cup.rotation.z=rz*(1-p);cup.position.x=x+(CX-x)*p;cup.position.z=z+(CZ-z)*p})}
 async function cupLift(){shaking=false;const y0=cup.position.y,x0=cup.position.x,z0=cup.position.z,r0=cup.rotation.z,q0=cup.rotation.x;
-  await tween(140,p=>{cup.position.set(x0+(CX-x0)*p,y0+(CY+CH-y0)*p,z0+(CZ-z0)*p);cup.rotation.z=r0*(1-p);cup.rotation.x=q0*(1-p)});sfx('hop');await wait(120);
+  sfx('slam');await tween(140,p=>{cup.position.set(x0+(CX-x0)*p,y0+(CY+CH-y0)*p,z0+(CZ-z0)*p);cup.rotation.z=r0*(1-p);cup.rotation.x=q0*(1-p)});await wait(120);
   cupUp=true;sfx('lift');await tween(300,p=>{const e=ease(p);cup.position.y=CY+CH+1.1*e;cup.rotation.z=.75*e;cup.position.x=CX-1.5*e;cup.position.z=CZ+.3*e})}
 let shakeT0=0;async function startShake(){await cupDown();die.visible=false;shaking=true;shakeT0=performance.now();sfx('shake')}
 // caméra
@@ -279,11 +279,32 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/
   ring.position.set(a.position.x,H+.02,a.position.z);const sc=1+Math.sin(now/220)*.08;ring.scale.set(sc,sc,sc);
   lad.rotation.y+=dt*.15;R.render(scene,cam)}
 /* ---------- son ---------- */
-let AC=null,sound=true;
-function sfx(k){if(!sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime,g=AC.createGain();g.connect(AC.destination);
-  if(k==='shake'){const b=AC.createBuffer(1,AC.sampleRate*.7,AC.sampleRate),d=b.getChannelData(0);for(let j=0;j<d.length;j++)d[j]=(Math.random()*2-1)*(Math.sin(j/AC.sampleRate*60)>.6?.5:.05);const s=AC.createBufferSource();s.buffer=b;g.gain.value=.12;s.connect(g);s.start()}
-  else{const o=AC.createOscillator();o.connect(g);const f={hop:520,lift:300,swap:700,win:660,roll:240}[k]||440;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*(k==='lift'?.6:1.6),t+.12);
-   g.gain.setValueAtTime(.08,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.start(t);o.stop(t+.2)}}catch(e){}}
+let AC=null,MG=null,sound=true,silentEl=null;
+function unlockAudio(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=.9;MG.connect(AC.destination)}
+  if(AC.state!=='running')AC.resume();
+  if(!silentEl){silentEl=new Audio('data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==');silentEl.loop=true;silentEl.setAttribute('playsinline','');silentEl.volume=.01}
+  if(silentEl.paused)silentEl.play().catch(()=>{});
+  const b=AC.createBuffer(1,1,22050),src=AC.createBufferSource();src.buffer=b;src.connect(MG);src.start(0)}catch(e){}}
+['pointerdown','touchend','click','keydown'].forEach(ev=>addEventListener(ev,unlockAudio,{passive:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state!=='running')AC.resume()});
+function env(g,t,a,peak,d){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+a+d)}
+function tone(f1,f2,t,d,type='sine',peak=.25){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+d);o.connect(g);g.connect(MG);env(g,t,.008,peak,d);o.start(t);o.stop(t+d+.05)}
+function noise(t,d,freq,q,peak){const n=Math.ceil(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),c=b.getChannelData(0);for(let k=0;k<n;k++)c[k]=Math.random()*2-1;
+  const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=b;f.type='bandpass';f.frequency.value=freq;f.Q.value=q;s.connect(f);f.connect(g);g.connect(MG);env(g,t,.004,peak,d);s.start(t);s.stop(t+d+.02)}
+function clack(t,v=.5){noise(t,.05,2400+Math.random()*1200,6,v);tone(900+Math.random()*300,500,t,.04,'triangle',v*.4)}
+function sfx(k){if(!sound)return;try{unlockAudio();if(!AC)return;const t=AC.currentTime+.01;
+  if(k==='shake'){for(let j=0;j<16;j++)clack(t+j*.065+Math.random()*.02,.25+Math.random()*.2)}
+  else if(k==='slam'){tone(140,60,t,.18,'sine',.5);noise(t,.08,600,1,.3)}
+  else if(k==='lift'){noise(t,.25,900,.8,.12)}
+  else if(k==='roll'){[0,.16,.3,.42,.52,.6,.67,.73].forEach((d,j)=>clack(t+d,.55-j*.05))}
+  else if(k==='hop'){tone(520,880,t,.09,'sine',.18)}
+  else if(k==='up'){[523,659,784,1047].forEach((f,j)=>tone(f,f*1.01,t+j*.07,.14,'triangle',.2))}
+  else if(k==='down'){[523,415,330,262].forEach((f,j)=>tone(f,f*.98,t+j*.09,.16,'sawtooth',.1))}
+  else if(k==='swap'){tone(300,900,t,.25,'triangle',.2);tone(900,300,t+.25,.25,'triangle',.2)}
+  else if(k==='six'){[784,1047,1319].forEach((f,j)=>tone(f,f,t+j*.06,.12,'square',.08))}
+  else if(k==='win'){[523,659,784,1047,784,1047,1319].forEach((f,j)=>tone(f,f,t+j*.12,j>4?.35:.16,'triangle',.25));noise(t+.8,.6,5000,.5,.08)}
+  else if(k==='lose'){[392,370,349,330].forEach((f,j)=>tone(f,f*.97,t+j*.2,.22,'triangle',.18))}
+  else tone(440,440,t,.1)}catch(e){}}
 /* ---------- état + HUD ---------- */
 let st={pos:[0,0],turn:0,wins:[0,0],winner:null,seq:0};
 let mode=null,me=null,names=['Jaune','Orange'],busy=false,q=Promise.resolve();
@@ -303,14 +324,14 @@ async function animate(act){busy=true;pending=false;refreshBtn();
   if(!shaking)await startShake();const el=performance.now()-shakeT0;if(el<1100)await wait(1100-el);
   await cupLift();await tumble(act.v);await wait(200);
   say(`${sj(act.p)} <em>${act.v}</em> !`);
-  for(const op of act.ops){if(op.swap){await wait(250);await swapAnim()}else{if(op.to!==vis.pos[op.w]&&act.ops.indexOf(op)>0)await wait(300);await walk(op.w,op.to)}}
+  act.ops.forEach((op,k)=>op.k=k);for(const op of act.ops){if(op.swap){await wait(250);await swapAnim()}else{if(op.k>0&&op.to!==vis.pos[op.w]){await wait(250);sfx(op.to>vis.pos[op.w]?'up':'down');await wait(250)}await walk(op.w,op.to)}}
   vis.pos=act.st.pos.slice();placePawns();
   const parts=[`${sj(act.p)} <em>${act.v}</em>.`];if(act.txt)parts.push(act.txt);
   hud(act.st);
   if(act.st.winner!=null){parts.push('');say(parts.join(' '));busy=false;refreshBtn();return winFx(act.st.winner)}
-  say(parts.join(' ')+'<br>'+(act.six?(mode!=='local'&&act.p===me?'<em>6 !</em> Tu rejoues.':`<em>6 !</em> ${esc(names[act.p])} rejoue.`):turnMsg(act.st)));busy=false;pending=false;refreshBtn();aiTick()}
+  if(act.six)sfx('six');say(parts.join(' ')+'<br>'+(act.six?(mode!=='local'&&act.p===me?'<em>6 !</em> Tu rejoues.':`<em>6 !</em> ${esc(names[act.p])} rejoue.`):turnMsg(act.st)));busy=false;pending=false;refreshBtn();aiTick()}
 function snap(s){st=s;vis.pos=s.pos.slice();placePawns();hud(s);if(s.winner==null){$('win').classList.add('hidden');say(turnMsg(s))}}
-function winFx(w){sfx('win');$('wt').textContent=(mode!=='local'&&w===me?'Tu':names[w])+(mode!=='local'&&w===me?' as gagné !':' gagne !');
+function winFx(w){sfx(mode!=='local'&&w!==me?'lose':'win');$('wt').textContent=(mode!=='local'&&w===me?'Tu':names[w])+(mode!=='local'&&w===me?' as gagné !':' gagne !');
   $('wsub').textContent=mode!=='local'&&w!==me?'Les laddoos sont pour ton adversaire… revanche ?':'Le bol de laddoos est à toi !';
   $('bAgain').textContent=mode==='guest'?'Demander la revanche':'Rejouer';
   setTimeout(()=>$('win').classList.remove('hidden'),700);
